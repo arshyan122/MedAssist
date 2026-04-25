@@ -47,11 +47,10 @@ const chat = async (req, res) => {
     // Mock fallback — simulate a brief delay for realism
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const randomIndex = Math.floor(Math.random() * mockResponses.length);
-    let reply = mockResponses[randomIndex];
+    let reply;
+    const lowerMsg = message.toLowerCase();
 
     // Add some contextual awareness based on keywords
-    const lowerMsg = message.toLowerCase();
     if (lowerMsg.includes('headache') || lowerMsg.includes('head pain')) {
       reply = "For headaches, try resting in a dark, quiet room and staying hydrated. Over-the-counter pain relievers like acetaminophen may help. If headaches are severe, sudden, or recurring, please consult a doctor right away. 🩺";
     } else if (lowerMsg.includes('fever') || lowerMsg.includes('temperature')) {
@@ -64,6 +63,12 @@ const chat = async (req, res) => {
       reply = "Quality sleep is essential! Aim for 7-9 hours nightly. Tips: maintain a consistent schedule, limit screens before bed, keep your room cool and dark, and avoid caffeine after 2 PM. If sleep issues persist, consult a sleep specialist. 😴";
     } else if (lowerMsg.includes('stress') || lowerMsg.includes('anxiety') || lowerMsg.includes('mental')) {
       reply = "Mental health is just as important as physical health. Try deep breathing exercises, meditation, or mindfulness. Regular exercise and social connections also help. Don't hesitate to reach out to a mental health professional if you're struggling. 🧠💚";
+    } else if (lowerMsg.includes('weather')) {
+      reply = "I am a health assistant. For accurate weather forecasts, please check a dedicated weather app. ☀️🌧️";
+    } else if (lowerMsg.includes('hi') || lowerMsg.includes('hello')) {
+      reply = "Hello! I am MedAssist AI. How can I help you with your health today?";
+    } else {
+      reply = "I'm a mock AI health assistant running offline. I only have pre-programmed responses for topics like sleep, diet, exercise, stress, fever, or headaches.";
     }
 
     res.json({
