@@ -6,7 +6,7 @@ const Doctor = require('../models/Doctor');
 const getAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ userId: req.user._id })
-      .populate('doctorId', 'name specialty location profileImage')
+      .populate('doctorId', 'name specialization hospital image')
       .sort({ date: 1, time: 1 });
     res.json(appointments);
   } catch (error) {
