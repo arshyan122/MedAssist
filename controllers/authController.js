@@ -74,4 +74,40 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { name, age, phone, bloodGroup, emergencyContact, gender, address } = req.body;
+
+    if (name !== undefined) user.name = name;
+    if (age !== undefined) user.age = age;
+    if (phone !== undefined) user.phone = phone;
+    if (bloodGroup !== undefined) user.bloodGroup = bloodGroup;
+    if (emergencyContact !== undefined) user.emergencyContact = emergencyContact;
+    if (gender !== undefined) user.gender = gender;
+    if (address !== undefined) user.address = address;
+
+    const updated = await user.save();
+    res.json({
+      _id: updated._id,
+      name: updated.name,
+      email: updated.email,
+      age: updated.age,
+      phone: updated.phone,
+      bloodGroup: updated.bloodGroup,
+      emergencyContact: updated.emergencyContact,
+      gender: updated.gender,
+      address: updated.address,
+      profileImage: updated.profileImage,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error updating profile' });
+  }
+};
+
+module.exports = { register, login, updateProfile };
