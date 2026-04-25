@@ -22,28 +22,40 @@ const chat = async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    // Try Gemini if API key is available
+    // Try Gemini via direct REST API (bypasses SDK version issues)
     if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
-      const modelsToTry = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+      const modelsToTry = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       for (const modelName of modelsToTry) {
         try {
-          const { GoogleGenerativeAI } = require('@google/generative-ai');
-          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-          const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            systemInstruction: 'You are MedAssist AI, a helpful assistant. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.'
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: {
+                parts: [{ text: 'You are MedAssist AI, a helpful assistant. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.' }]
+              },
+              contents: [{ parts: [{ text: message }] }]
+            })
           });
 
-          const result = await model.generateContent(message);
-          const text = result.response.text();
+          if (!response.ok) {
+            const errBody = await response.text();
+            console.error(`Gemini REST ${modelName} failed (${response.status}):`, errBody.substring(0, 200));
+            continue;
+          }
 
-          return res.json({
-            reply: text,
-            source: 'gemini',
-          });
+          const data = await response.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (text) {
+            return res.json({ reply: text, source: 'gemini' });
+          }
+          console.error(`Gemini REST ${modelName}: no text in response`);
+          continue;
         } catch (aiError) {
-          console.error(`Gemini model ${modelName} failed:`, aiError.message);
-          continue; // try next model
+          console.error(`Gemini REST ${modelName} error:`, aiError.message);
+          continue;
         }
       }
       console.error('All Gemini models failed, falling back to mock.');
