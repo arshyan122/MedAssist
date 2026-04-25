@@ -41,6 +41,8 @@ const chat = async (req, res) => {
         });
       } catch (aiError) {
         console.error('Gemini error, falling back to mock:', aiError);
+        // Expose error for debugging
+        req.aiErrorMessage = aiError.message || String(aiError);
       }
     }
 
@@ -69,6 +71,9 @@ const chat = async (req, res) => {
       reply = "Hello! I am MedAssist AI. How can I help you with your health today?";
     } else {
       reply = "I'm a mock AI health assistant running offline. I only have pre-programmed responses for topics like sleep, diet, exercise, stress, fever, or headaches.";
+      if (req.aiErrorMessage) {
+        reply += `\n\n[DEBUG: Gemini failed: ${req.aiErrorMessage}]`;
+      }
     }
 
     res.json({
