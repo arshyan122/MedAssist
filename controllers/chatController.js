@@ -24,26 +24,29 @@ const chat = async (req, res) => {
 
     // Try Gemini if API key is available
     if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
-      try {
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ 
-          model: 'gemini-2.0-flash',
-          systemInstruction: 'You are MedAssist AI, a helpful assistant. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.'
-        });
+      const modelsToTry = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+      for (const modelName of modelsToTry) {
+        try {
+          const { GoogleGenerativeAI } = require('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: 'You are MedAssist AI, a helpful assistant. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.'
+          });
 
-        const result = await model.generateContent(message);
-        const text = result.response.text();
+          const result = await model.generateContent(message);
+          const text = result.response.text();
 
-        return res.json({
-          reply: text,
-          source: 'gemini',
-        });
-      } catch (aiError) {
-        console.error('Gemini error, falling back to mock:', aiError);
-        // Expose error for debugging
-        req.aiErrorMessage = aiError.message || String(aiError);
+          return res.json({
+            reply: text,
+            source: 'gemini',
+          });
+        } catch (aiError) {
+          console.error(`Gemini model ${modelName} failed:`, aiError.message);
+          continue; // try next model
+        }
       }
+      console.error('All Gemini models failed, falling back to mock.');
     }
 
     // Mock fallback — simulate a brief delay for realism
@@ -65,15 +68,16 @@ const chat = async (req, res) => {
       reply = "Quality sleep is essential! Aim for 7-9 hours nightly. Tips: maintain a consistent schedule, limit screens before bed, keep your room cool and dark, and avoid caffeine after 2 PM. If sleep issues persist, consult a sleep specialist. 😴";
     } else if (lowerMsg.includes('stress') || lowerMsg.includes('anxiety') || lowerMsg.includes('mental')) {
       reply = "Mental health is just as important as physical health. Try deep breathing exercises, meditation, or mindfulness. Regular exercise and social connections also help. Don't hesitate to reach out to a mental health professional if you're struggling. 🧠💚";
+    } else if (lowerMsg.includes('stomach') || lowerMsg.includes('digestion') || lowerMsg.includes('nausea')) {
+      reply = "For stomach issues, try sipping ginger tea, eating bland foods (rice, toast, bananas), and staying hydrated. Avoid spicy or greasy foods. If pain is severe or persists more than 24 hours, please see a doctor. 🏥";
+    } else if (lowerMsg.includes('cold') || lowerMsg.includes('cough') || lowerMsg.includes('flu')) {
+      reply = "For cold/flu symptoms: rest well, drink warm fluids, and use honey for sore throat relief. Over-the-counter decongestants may help. If you have high fever or difficulty breathing, seek medical attention immediately. 🤧";
     } else if (lowerMsg.includes('weather')) {
-      reply = "I am a health assistant. For accurate weather forecasts, please check a dedicated weather app. ☀️🌧️";
-    } else if (lowerMsg.includes('hi') || lowerMsg.includes('hello')) {
-      reply = "Hello! I am MedAssist AI. How can I help you with your health today?";
+      reply = "I'm a health assistant, so I can't check the weather for you. Please use a weather app for that! ☀️🌧️";
+    } else if (lowerMsg.includes('hi') || lowerMsg.includes('hello') || lowerMsg.includes('hey')) {
+      reply = "Hello! 👋 I'm MedAssist AI. Ask me about health topics like headaches, fever, diet, exercise, sleep, stress, or stomach issues!";
     } else {
-      reply = "I'm a mock AI health assistant running offline. I only have pre-programmed responses for topics like sleep, diet, exercise, stress, fever, or headaches.";
-      if (req.aiErrorMessage) {
-        reply += `\n\n[DEBUG: Gemini failed: ${req.aiErrorMessage}]`;
-      }
+      reply = "I'm currently running in offline mode with limited responses. I can help with: headaches, fever, diet, exercise, sleep, stress, stomach issues, and cold/flu. Try asking about one of these topics! 💬";
     }
 
     res.json({
