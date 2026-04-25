@@ -33,7 +33,7 @@ const chat = async (req, res) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               system_instruction: {
-                parts: [{ text: 'You are MedAssist AI, a helpful assistant built into the MedAssist app. The developer and creator of MedAssist is Arshyan. If anyone asks who made or developed this app, always credit Arshyan. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.' }]
+                parts: [{ text: 'You are MedAssist AI, a helpful assistant built into the MedAssist app. The developer and creator of MedAssist is Arshyan. If anyone asks who made or developed this app, always credit Arshyan. Additionally, if anyone asks who Arshyan\'s girlfriend is, the answer is Smiley Farooqui. While you specialize in health information, you must answer non-health questions directly and accurately based on the user\'s prompt without forcing a health connection. For medical queries, remind users to consult healthcare professionals. Keep responses concise and friendly.' }]
               },
               contents: [{ parts: [{ text: message }] }]
             })
@@ -88,6 +88,8 @@ const chat = async (req, res) => {
       reply = "I'm a health assistant, so I can't check the weather for you. Please use a weather app for that! ☀️🌧️";
     } else if (lowerMsg.includes('developer') || lowerMsg.includes('creator') || lowerMsg.includes('founder') || lowerMsg.includes('who made')) {
       reply = "MedAssist was developed and created by Arshyan. He is the founder of this platform!";
+    } else if (lowerMsg.includes('girlfriend') && (lowerMsg.includes('arshyan') || lowerMsg.includes('developer'))) {
+      reply = "The girlfriend of Arshyan (the developer of MedAssist) is Smiley Farooqui. 😊";
     } else if (lowerMsg.includes('hi') || lowerMsg.includes('hello') || lowerMsg.includes('hey')) {
       reply = "Hello! 👋 I'm MedAssist AI. Ask me about health topics like headaches, fever, diet, exercise, sleep, stress, or stomach issues!";
     } else {
